@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}VacationRequest index{% endblock %}
+
+{% block body %}
+    <h1>VacationRequest admin index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Start_date</th>
+                <th>End_date</th>
+                <th>Status</th>
+                <th>Project_lead_approved</th>
+                <th>Team_lead_approved</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for vacation_request in vacation_requests %}
+            <tr>
+                <td>{{ vacation_request.id }}</td>
+                <td>{{ vacation_request.startDate ? vacation_request.startDate|date('Y-m-d') : '' }}</td>
+                <td>{{ vacation_request.endDate ? vacation_request.endDate|date('Y-m-d') : '' }}</td>
+                <td>{{ vacation_request.status }}</td>
+                <td>{{ vacation_request.projectLeadApproved ? 'Yes' : 'No' }}</td>
+                <td>{{ vacation_request.teamLeadApproved ? 'Yes' : 'No' }}</td>
+                <td>
+                    <a href="{{ path('app_vacation_request_show', {'id': vacation_request.id}) }}">show</a>
+                    <a href="{{ path('app_vacation_request_edit', {'id': vacation_request.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_vacation_request_new') }}">Create new</a>
+{% endblock %}

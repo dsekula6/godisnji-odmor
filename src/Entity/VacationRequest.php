@@ -29,6 +29,9 @@ class VacationRequest
     #[ORM\Column]
     private ?bool $team_lead_approved = null;
 
+    #[ORM\ManyToOne(inversedBy: 'vacationRequests')]
+    private ?User $user = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -90,6 +93,18 @@ class VacationRequest
     public function setTeamLeadApproved(bool $team_lead_approved): static
     {
         $this->team_lead_approved = $team_lead_approved;
+
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): static
+    {
+        $this->user = $user;
 
         return $this;
     }

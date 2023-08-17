@@ -46,11 +46,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'project_lead', targetEntity: Project::class)]
     private Collection $projects;
 
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: VacationRequest::class)]
+    private Collection $vacationRequests;
+
     public function __construct()
     {
         $this->app_roles = new ArrayCollection();
         $this->teamMembers = new ArrayCollection();
         $this->projects = new ArrayCollection();
+        $this->vacationRequests = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -225,6 +229,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($project->getProjectLead() === $this) {
                 $project->setProjectLead(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, VacationRequest>
+     */
+    public function getVacationRequests(): Collection
+    {
+        return $this->vacationRequests;
+    }
+
+    public function addVacationRequest(VacationRequest $vacationRequest): static
+    {
+        if (!$this->vacationRequests->contains($vacationRequest)) {
+            $this->vacationRequests->add($vacationRequest);
+            $vacationRequest->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVacationRequest(VacationRequest $vacationRequest): static
+    {
+        if ($this->vacationRequests->removeElement($vacationRequest)) {
+            // set the owning side to null (unless already changed)
+            if ($vacationRequest->getUser() === $this) {
+                $vacationRequest->setUser(null);
             }
         }
 
