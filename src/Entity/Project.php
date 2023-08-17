@@ -21,6 +21,9 @@ class Project
     #[ORM\ManyToMany(targetEntity: Team::class, inversedBy: 'team_projects')]
     private Collection $project_teams;
 
+    #[ORM\ManyToOne(inversedBy: 'projects')]
+    private ?User $project_lead = null;
+
     public function __construct()
     {
         $this->project_teams = new ArrayCollection();
@@ -63,6 +66,18 @@ class Project
     public function removeProjectTeam(Team $projectTeam): static
     {
         $this->project_teams->removeElement($projectTeam);
+
+        return $this;
+    }
+
+    public function getProjectLead(): ?User
+    {
+        return $this->project_lead;
+    }
+
+    public function setProjectLead(?User $project_lead): static
+    {
+        $this->project_lead = $project_lead;
 
         return $this;
     }

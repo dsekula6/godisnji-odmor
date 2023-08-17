@@ -23,6 +23,12 @@ class VacationRequest
     #[ORM\Column(length: 255)]
     private ?string $status = null;
 
+    #[ORM\Column]
+    private ?bool $project_lead_approved = null;
+
+    #[ORM\Column]
+    private ?bool $team_lead_approved = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -60,6 +66,30 @@ class VacationRequest
     public function setStatus(string $status): static
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function isProjectLeadApproved(): ?bool
+    {
+        return $this->project_lead_approved;
+    }
+
+    public function setProjectLeadApproved(bool $project_lead_approved): static
+    {
+        $this->project_lead_approved = $project_lead_approved;
+
+        return $this;
+    }
+
+    public function isTeamLeadApproved(): ?bool
+    {
+        return $this->team_lead_approved;
+    }
+
+    public function setTeamLeadApproved(bool $team_lead_approved): static
+    {
+        $this->team_lead_approved = $team_lead_approved;
 
         return $this;
     }
