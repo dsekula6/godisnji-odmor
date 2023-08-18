@@ -9,6 +9,7 @@
         <thead>
             <tr>
                 <th>Id</th>
+                <th>Full name</th>
                 <th>Start_date</th>
                 <th>End_date</th>
                 <th>Status</th>
@@ -21,6 +22,7 @@
         {% for vacation_request in vacation_requests %}
             <tr>
                 <td>{{ vacation_request.id }}</td>
+                <td>{{ vacation_request.user.firstName }} {{ vacation_request.user.lastName }}</td>
                 <td>{{ vacation_request.startDate ? vacation_request.startDate|date('Y-m-d') : '' }}</td>
                 <td>{{ vacation_request.endDate ? vacation_request.endDate|date('Y-m-d') : '' }}</td>
                 <td>{{ vacation_request.status }}</td>

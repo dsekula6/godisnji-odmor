@@ -26,17 +26,17 @@ class AppFixtures extends Fixture
         $role1->setRoleName('employee');
         $manager->persist($role1);
         
-        // $role2 = new AppRole();
-        // $role2->setRoleName('project lead');
-        // $manager->persist($role2);
+        $role2 = new AppRole();
+        $role2->setRoleName('project lead');
+        $manager->persist($role2);
         
-        // $role3 = new AppRole();
-        // $role3->setRoleName('team lead');
-        // $manager->persist($role3);
-
         $role3 = new AppRole();
-        $role3->setRoleName('approver');
+        $role3->setRoleName('team lead');
         $manager->persist($role3);
+
+        // $role3 = new AppRole();
+        // $role3->setRoleName('approver');
+        // $manager->persist($role3);
         
         $role4 = new AppRole();
         $role4->setRoleName('admin');
@@ -68,7 +68,7 @@ class AppFixtures extends Fixture
         $user3->setFirstName('Project');
         $user3->setLastName('Lead');
         $user3->setPassword($this->userPasswordHasher->hashPassword($user,'project'));
-        $user3->addAppRole($role3); // project lead
+        $user3->addAppRole($role2); // project lead
         $manager->persist($user3);
 
         $user4 = new User();

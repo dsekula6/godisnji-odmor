@@ -6,6 +6,7 @@ use App\Repository\TeamRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use PhpParser\Node\Expr\Cast\String_;
 
 #[ORM\Entity(repositoryClass: TeamRepository::class)]
 class Team
@@ -102,5 +103,9 @@ class Team
         }
 
         return $this;
+    }
+    public function __toString() : string
+    {
+        return $this->team_name;
     }
 }
