@@ -24,6 +24,9 @@ class Project
     #[ORM\ManyToOne(inversedBy: 'projects')]
     private ?User $project_lead = null;
 
+    #[ORM\Column]
+    private ?bool $active = null;
+
     public function __construct()
     {
         $this->project_teams = new ArrayCollection();
@@ -78,6 +81,22 @@ class Project
     public function setProjectLead(?User $project_lead): static
     {
         $this->project_lead = $project_lead;
+
+        return $this;
+    }
+    public function __toString(): string
+    {
+        return $this->project_name;
+    }
+
+    public function isActive(): ?bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): static
+    {
+        $this->active = $active;
 
         return $this;
     }

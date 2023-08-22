@@ -15,6 +15,12 @@
                 <th>Team_name</th>
                 <td>{{ team.teamName }}</td>
             </tr>
+            <tr>
+                <th>Team Members</th>
+                <td>{% for member in team.teamMembers %}
+                    {{member.user.firstName}} {{member.user.lastName}} <br>
+                {% endfor %}</td>
+            </tr>
         </tbody>
     </table>
 

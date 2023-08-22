@@ -37,9 +37,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255)]
     private ?string $last_name = null;
 
-    #[ORM\ManyToMany(targetEntity: AppRole::class)]
-    private Collection $app_roles;
-
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: TeamMember::class, orphanRemoval: true)]
     private Collection $teamMembers;
 
@@ -49,9 +46,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: VacationRequest::class)]
     private Collection $vacationRequests;
 
+    #[ORM\Column]
+    private ?int $days_left = null;
+
     public function __construct()
     {
-        $this->app_roles = new ArrayCollection();
         $this->teamMembers = new ArrayCollection();
         $this->projects = new ArrayCollection();
         $this->vacationRequests = new ArrayCollection();
@@ -152,30 +151,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @return Collection<int, AppRole>
-     */
-    public function getAppRoles(): Collection
-    {
-        return $this->app_roles;
-    }
-
-    public function addAppRole(AppRole $appRole): static
-    {
-        if (!$this->app_roles->contains($appRole)) {
-            $this->app_roles->add($appRole);
-        }
-
-        return $this;
-    }
-
-    public function removeAppRole(AppRole $appRole): static
-    {
-        $this->app_roles->removeElement($appRole);
-
-        return $this;
-    }
-
-    /**
      * @return Collection<int, TeamMember>
      */
     public function getTeamMembers(): Collection
@@ -264,8 +239,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
-    public function __toString() : string
+    public function __toString(): string
     {
-        return $this->first_name.' '.$this->last_name;
+        return $this->first_name . ' ' . $this->last_name;
+    }
+
+    public function getDaysLeft(): ?int
+    {
+        return $this->days_left;
+    }
+
+    public function setDaysLeft(int $days_left): static
+    {
+        $this->days_left = $days_left;
+
+        return $this;
     }
 }

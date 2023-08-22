@@ -3,7 +3,7 @@
 namespace App\Form;
 
 use App\Entity\User;
-use App\Entity\AppRole;
+use App\Entity\Team;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -48,13 +48,16 @@ class RegistrationFormType extends AbstractType
             ])
             ->add('first_name', TextType::class)
             ->add('last_name', TextType::class)
-            ->add('app_roles', EntityType::class, [
-                'class' => AppRole::class,
-                'choice_label' => 'role_name',
-                'multiple' => true,
-                'expanded' => true,
+            ->add('team', EntityType::class, [
+                'class' => Team::class,
+                'mapped' => false,
+                'required' => false,
             ])
-        ;
+            ->add('roles', TextType::class, [
+                'mapped' => false,
+                'required' => false,
+                'label' => 'Symfony Roles',
+            ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

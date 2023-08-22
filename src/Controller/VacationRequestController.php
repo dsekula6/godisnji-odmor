@@ -2,103 +2,71 @@
 
 namespace App\Controller;
 
-use App\Entity\Project;
 use App\Entity\User;
 use App\Entity\VacationRequest;
 use App\Form\VacationRequestType;
-use App\Repository\ProjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Repository\VacationRequestRepository;
-use PhpParser\Node\Expr\Cast\Array_;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Service\ApproverVacationRequestService;
+use App\Service\VacationRequestService;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-#[Route('/vacationrequest')]
+#[Route('/vacation-request')]
 class VacationRequestController extends AbstractController
 {
     #[Route('/', name: 'app_vacation_request_index', methods: ['GET'])]
-    public function index(VacationRequestRepository $vacationRequestRepository, ProjectRepository $projectRepository): Response
+    public function index(VacationRequestRepository $vacationRequestRepository, ApproverVacationRequestService $approverVacationRequestService): Response
     {
         $user = $this->getUser();
-
-        foreach ($user->getAppRoles() as $value) {
-            if ($value->getRoleName()=='admin') {
-                // admin view
-                return $this->render('vacation_request/admin_index.html.twig', [
-                    'vacation_requests' => $vacationRequestRepository->findAll(),
-                ]);
-            }
-            else if ($value->getRoleName() == 'team_lead' || $value->getRoleName() == 'project_lead') {
-                // approver view
-                $vacationRequests = $vacationRequestRepository->findAll();
-                $filteredVacationRequests = [];
-                $currentUserTeamIds = [];
-
-                // dodaj sve timove od projekta od kojeg je approver user project lead
-                foreach ($projectRepository->findAll() as $project) {
-                    if ($project->getProjectLead()->getId() == $user->getId()) {
-                        foreach ($project->getProjectTeams() as $team) {
-                            $currentUserTeamIds[] = $team->getId();
-                        }
-                    }
-                }
-
-                // dodaj tim ako je user team lead nekog teama
-                foreach ($user->getTeamMembers() as $teamMember) {
-                    if ($teamMember->getTeamRole() == 'team_lead') {
-                        $currentUserTeamIds[] = $teamMember->getTeam()->getId();
-                    }
-                }
-                $currentUserTeamIds = array_unique($currentUserTeamIds);
-
-                $filteredVacationRequests = array_filter($vacationRequests, function ($request) use ($currentUserTeamIds) {
-                    $user = $request->getUser();
-                    foreach ($user->getTeamMembers() as $teamMember) {
-                        if (in_array($teamMember->getTeam()->getId(), $currentUserTeamIds)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                });
-            
-                
-                return $this->render('vacation_request/approver_index.html.twig', [
-                    'vacation_requests' => $filteredVacationRequests,
-                    'user_name' => $user->getFirstName().' '.$user->getLastName(),
-                    'user_roles' => $user->getAppRoles(),
-                ]);
-            }
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_vacation_request_index', [], Response::HTTP_SEE_OTHER);
         }
-        // Employee view
-        return $this->render('vacation_request/employee_index.html.twig', [
-            'vacation_requests' => $vacationRequestRepository->findBy(['user' => [ 'id' => $user->getId()]]),
+        $roles = $user->getRoles();
+
+        if (in_array('ROLE_ADMIN', $roles)) {
+            return $this->render('vacation_request/index.html.twig', [
+                'vacation_requests' => $vacationRequestRepository->findAll(),
+                'user_roles' => $user->getRoles(),
+            ]);
+        }
+
+        if (in_array('ROLE_TEAM_LEAD', $roles) || in_array('ROLE_PROJECT_LEAD', $roles)) {
+            return $this->render('vacation_request/index.html.twig', [
+                'vacation_requests' => $approverVacationRequestService->getFilteredVacationRequests($user),
+                'user_name' => $user->getFirstName() . ' ' . $user->getLastName(),
+                'user_roles' => $user->getRoles(),
+            ]);
+        }
+        return $this->render('vacation_request/index.html.twig', [
+            'vacation_requests' => $vacationRequestRepository->findBy(['user' => ['id' => $user->getId()]]),
+            'days_left' => $user->getDaysLeft(),
+            'user_roles' => $user->getRoles(),
         ]);
     }
-    
 
     #[Route('/new', name: 'app_vacation_request_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, VacationRequestService $vacationRequestService): Response
     {
         $vacationRequest = new VacationRequest();
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_vacation_request_index', [], Response::HTTP_SEE_OTHER);
+        }
         $form = $this->createForm(VacationRequestType::class, $vacationRequest);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $vacationRequest->setStatus('pending');
-            $vacationRequest->setTeamLeadApproved(false);
-            $vacationRequest->setProjectLeadApproved(false);
-            $vacationRequest->setUser($this->getUser());
-            $entityManager->persist($vacationRequest);
-            $entityManager->flush();
-
+            $vacationRequestService->createVacationRequest($vacationRequest, $user);
             return $this->redirectToRoute('app_vacation_request_index', [], Response::HTTP_SEE_OTHER);
         }
 
         return $this->render('vacation_request/new.html.twig', [
             'vacation_request' => $vacationRequest,
             'form' => $form,
+            'days_left' => $user->getDaysLeft(),
         ]);
     }
 
@@ -131,7 +99,7 @@ class VacationRequestController extends AbstractController
     #[Route('/{id}', name: 'app_vacation_request_delete', methods: ['POST'])]
     public function delete(Request $request, VacationRequest $vacationRequest, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$vacationRequest->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $vacationRequest->getId(), $request->request->get('_token'))) {
             $entityManager->remove($vacationRequest);
             $entityManager->flush();
         }
@@ -140,42 +108,10 @@ class VacationRequestController extends AbstractController
     }
 
     #[Route('/{id}/approve', name: 'app_vacation_request_approve', methods: ['GET'])]
-    public function approve(VacationRequest $vacationRequest, EntityManagerInterface $entityManager, ProjectRepository $projectRepository): Response
+    public function approve(VacationRequest $vacationRequest, ApproverVacationRequestService $approverVacationRequestService): Response
     {
-        $user = $this->getUser();
-        $teamLeadId = 0;
-        $projectTeams = [];
-        foreach ($user->getTeamMembers() as $teamMember) {
-            if ($teamMember->getTeamRole() == 'team_lead') {
-                $teamLeadId = $teamMember->getTeam()->getId();
-            }
-            
-        }
-        foreach ($projectRepository->findAll() as $project) {
-            if ($project->getProjectLead()->getId() == $user->getId()) {
-                foreach ($project->getProjectTeams() as $team) {
-                    $projectTeams[] = $team->getId();
-                }
-            }
-        }
-        $projectTeams = array_unique($projectTeams);
-        
-        
-        foreach ($vacationRequest->getUser()->getTeamMembers() as $userTeamMember) {
-            // ako je approver team lead trenutnog usera
-            if ($userTeamMember->getTeam()->getId() == $teamLeadId) {
-                $vacationRequest->setTeamLeadApproved(true);
-            }
+        $approverVacationRequestService->approveVacationRequest($vacationRequest, $this->getUser());
 
-            //ako je approver project lead trenutnog usera
-            if (in_array($userTeamMember->getTeam()->getId(), $projectTeams)) {
-                $vacationRequest->setProjectLeadApproved(true);
-            }
-        }
-        // dd($vacationRequest);
-        $entityManager->flush();
-        
         return $this->redirectToRoute('app_vacation_request_index', [], Response::HTTP_SEE_OTHER);
     }
-
 }

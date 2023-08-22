@@ -1,0 +1,72 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}VacationRequest index{% endblock %}
+
+{% block body %}
+    <h1>VacationRequest index</h1>
+    {% if 'ROLE_EMPLOYEE' in user_roles %}
+        <h2>Days left: {{ days_left }}</h2>
+    {% endif %}
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Full name</th>
+                <th>Start_date</th>
+                <th>End_date</th>
+                {% if 'ROLE_PROJECT_LEAD' in user_roles or 'ROLE_EMPLOYEE' in user_roles or 'ROLE_ADMIN' in user_roles %}
+                    <th>Project_lead_approved</th>
+                {% endif %}
+                {% if 'ROLE_TEAM_LEAD' in user_roles or 'ROLE_EMPLOYEE' in user_roles or 'ROLE_ADMIN' in user_roles %}
+                    <th>Team_lead_approved</th>
+                {% endif %}
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for vacation_request in vacation_requests %}
+            <tr>
+                <td>{{ vacation_request.id }}</td>
+                <td>{{ vacation_request.user.firstName }} {{ vacation_request.user.lastName }}</td>
+                <td>{{ vacation_request.startDate ? vacation_request.startDate|date('Y-m-d') : '' }}</td>
+                <td>{{ vacation_request.endDate ? vacation_request.endDate|date('Y-m-d') : '' }}</td>
+                {% if 'ROLE_EMPLOYEE' in user_roles %}
+                    <td>{{ vacation_request.projectLeadApproved ? 'Yes' : 'No' }}</td>
+                    <td>{{ vacation_request.teamLeadApproved ? 'Yes' : 'No' }}</td>       
+                    <td>
+                        <a href="{{ path('app_vacation_request_show', {'id': vacation_request.id}) }}">show</a>
+                        <a href="{{ path('app_vacation_request_edit', {'id': vacation_request.id}) }}">edit</a>
+                    </td>    
+                {% elseif 'ROLE_PROJECT_LEAD' in user_roles or 'ROLE_TEAM_LEAD' in user_roles %}
+                    {% if 'ROLE_PROJECT_LEAD' in user_roles %}
+                        <td>{{ vacation_request.projectLeadApproved ? 'Yes' : 'No' }}</td>
+                    {% endif %}
+                    {% if 'ROLE_TEAM_LEAD' in user_roles %}
+                        <td>{{ vacation_request.teamLeadApproved ? 'Yes' : 'No' }}</td>  
+                    {% endif %}
+                    <td>
+                        <a href="{{ path('app_vacation_request_approve', {'id': vacation_request.id}) }}">Approve</a>
+                    </td>
+                {% endif %}
+                {% if 'ROLE_ADMIN' in user_roles %}
+                    <td>{{ vacation_request.projectLeadApproved ? 'Yes' : 'No' }}</td>
+                    <td>{{ vacation_request.teamLeadApproved ? 'Yes' : 'No' }}</td>
+                    <td>
+                        <a href="{{ path('app_vacation_request_show', {'id': vacation_request.id}) }}">show</a>
+                        <a href="{{ path('app_vacation_request_edit', {'id': vacation_request.id}) }}">edit</a>
+                        <a href="{{ path('app_vacation_request_approve', {'id': vacation_request.id}) }}">Approve</a>
+                    </td>
+                {% endif %}
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% if 'ROLE_EMPLOYEE' in user_roles %}
+        <a href="{{ path('app_vacation_request_new') }}">Create new</a>
+    {% endif %}
+{% endblock %}
